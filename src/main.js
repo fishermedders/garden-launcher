@@ -70,6 +70,9 @@ msmc.fastLaunch("raw",
             memory: {
                 max: "6G",
                 min: "4G"
+            },
+            overrides: {
+              detached: false
             }
         }
         event.reply("mc-console","Starting!")
