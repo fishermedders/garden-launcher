@@ -11,10 +11,29 @@ import editMenuTemplate from "./menu/edit_menu_template";
 import devMenuTemplate from "./menu/dev_menu_template";
 import createWindow from "./helpers/window";
 
+const {writeFile, existsSync, mkdirSync} = require('fs');
+const {promisify} = require('util');
+const writeFilePromise = promisify(writeFile);
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const launcher = new Client();
 const msmc = require("msmc");
 const fetch = require("node-fetch");
+const appdata = process.env.APPDATA + "\\.gardenclient" || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences/.gardenclient' : process.env.HOME + "/.local/share/.gardenclient")
+
+function downloadFile(url, outputPath) {
+  return fetch(url)
+      .then(x => x.arrayBuffer())
+      .then(x => writeFilePromise(outputPath, Buffer.from(x)));
+}
+
+export const clone = (...args) => new Promise((res, rej) => {
+  require("download-git-repo")(...args, err => {
+      if (!err) res();
+      else rej();
+  })
+});
+
+export default clone;
 
 // Special module holding environment variables which you declared
 // in config/env_xxx.json file.
@@ -44,9 +63,43 @@ const initIpc = () => {
   ipcMain.on("open-external-link", (event, href) => {
     shell.openExternal(href);
   });
-  ipcMain.on("launch-client", (event, href) => {
-    msmc.setFetch(fetch)
-msmc.fastLaunch("raw",
+  ipcMain.on("launch-client", async (event, href) => {
+    //
+    if (!existsSync(appdata)){
+      mkdirSync(appdata);
+    }
+    await downloadFile('https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.1-39.0.88/forge-1.18.1-39.0.88-installer.jar', path.join(appdata, 'forge-installer.jar'))
+    await clone(
+      "fishermedders/garden-launcher-modpack",
+      appdata
+    );
+    //If the login works
+    let opts = {
+      clientPackage: null,
+      // Pulled from the Minecraft Launcher core docs , this function is the star of the show
+      //authorization: msmc.getMCLC().getAuth(undefined),
+      authorization: Authenticator.getAuth(undefined),
+      root: appdata,
+      version: {
+          number: "1.18.1",
+          type: "release"
+      },
+      memory: {
+          max: "6G",
+          min: "4G"
+      },
+      overrides: {
+        detached: false
+      },
+      forge: path.join(appdata, 'forge-installer.jar')
+  }
+  event.reply("mc-console","Starting!")
+  launcher.launch(opts);
+
+  launcher.on('debug', (e) => event.reply("mc-console",e));
+  launcher.on('data', (e) => event.reply("mc-console",e));
+    /*msmc.setFetch(fetch)
+    msmc.fastLaunch("raw",
     (update) => {
         //A hook for catching loading bar events and errors, standard with MSMC
         console.log("CallBack!!!!!")
@@ -57,33 +110,12 @@ msmc.fastLaunch("raw",
           event.reply("mc-console", result.reason)
             return;
         }
-        //If the login works
-        let opts = {
-            clientPackage: null,
-            // Pulled from the Minecraft Launcher core docs , this function is the star of the show
-            authorization: msmc.getMCLC().getAuth(result),
-            root: process.env.APPDATA + "\\.gardenclient" || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences/.gardenclient' : process.env.HOME + "/.local/share/.gardenclient"),
-            version: {
-                number: "1.18.1",
-                type: "release"
-            },
-            memory: {
-                max: "6G",
-                min: "4G"
-            },
-            overrides: {
-              detached: false
-            }
-        }
-        event.reply("mc-console","Starting!")
-        launcher.launch(opts);
-
-        launcher.on('debug', (e) => event.reply("mc-console",e));
-        launcher.on('data', (e) => event.reply("mc-console",e));
+        //default launcher behaviour here if we want microsoft specific login //TODO! maybe.
     }).catch(reason => {
         //If the login fails
         event.reply("mc-console","We failed to log someone in because : " + reason);
-    })
+    })*/
+    
   });
 };
 
