@@ -62,7 +62,7 @@ msmc.fastLaunch("raw",
             clientPackage: null,
             // Pulled from the Minecraft Launcher core docs , this function is the star of the show
             authorization: msmc.getMCLC().getAuth(result),
-            root: "./minecraft",
+            root: process.env.APPDATA + "\\.gardenclient" || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences/.gardenclient' : process.env.HOME + "/.local/share/.gardenclient"),
             version: {
                 number: "1.18.1",
                 type: "release"
