@@ -7,7 +7,10 @@ import jetpack from "fs-jetpack";
 import { greet } from "./hello_world/hello_world";
 import env from "env";
 
+var $ = require('jquery')
+
 document.querySelector("#app").style.display = "block";
+ipcRenderer.send("tx-max-ram")
 
 /* We can communicate with main process through messages.
 ipcRenderer.on("app-path", (event, appDirPath) => {
@@ -20,9 +23,19 @@ ipcRenderer.on("app-path", (event, appDirPath) => {
 ipcRenderer.send("need-app-path");*/
 
 document.getElementById("launch").addEventListener("click", function() {
-  ipcRenderer.send("launch-client")
+  ipcRenderer.send("launch-client", { xmx: $("#ram").val() })
 });
 
 ipcRenderer.on("mc-console", (event, log) => {
   console.log(log)
+});
+
+ipcRenderer.on("rx-max-ram", (event, amount) => {
+  $("#ram").attr("max", amount)
+});
+
+$('input[type=range]').on('input', function () {
+  $(this).trigger('change');
+  console.log("changed")
+  $("#ram-amount").text($(this).val())
 });

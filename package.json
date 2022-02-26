@@ -28,11 +28,13 @@
     "e2e": "mocha temp/e2e.js --require source-map-support/register",
     "test": "npm run unit && npm run e2e",
     "start": "node build/start.js",
-    "release": "npm test && webpack --config=build/webpack.app.config.js --env=production && electron-builder"
+    "release": "webpack --config=build/webpack.app.config.js --env=production && electron-builder",
+    "testrelease": "npm test && webpack --config=build/webpack.app.config.js --env=production && electron-builder"
   },
   "dependencies": {
     "download-git-repo": "^3.0.2",
     "fs-jetpack": "^4.1.0",
+    "jquery": "^3.6.0",
     "minecraft-launcher-core": "^3.16.11",
     "msmc": "^3.0.6"
   },

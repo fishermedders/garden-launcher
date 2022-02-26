@@ -14,6 +14,7 @@ import createWindow from "./helpers/window";
 const {writeFile, existsSync, mkdirSync} = require('fs');
 const {promisify} = require('util');
 const writeFilePromise = promisify(writeFile);
+const os = require("os");
 const { Client, Authenticator } = require('minecraft-launcher-core');
 const launcher = new Client();
 const msmc = require("msmc");
@@ -63,7 +64,10 @@ const initIpc = () => {
   ipcMain.on("open-external-link", (event, href) => {
     shell.openExternal(href);
   });
-  ipcMain.on("launch-client", async (event, href) => {
+  ipcMain.on("tx-max-ram", (event, args) => {
+    event.reply("rx-max-ram", Math.ceil(os.totalmem() / (1024 * 1024 * 1024)))
+  });
+  ipcMain.on("launch-client", async (event, args) => {
     //
     if (!existsSync(appdata)){
       mkdirSync(appdata);
@@ -85,7 +89,7 @@ const initIpc = () => {
           type: "release"
       },
       memory: {
-          max: "6G",
+          max: args.xmx + "G",
           min: "4G"
       },
       overrides: {
